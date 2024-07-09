@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gondola di Venezia</title>
+    <style>
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #87CEEB; }
+        canvas { border: 2px solid #000; image-rendering: pixelated; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="320" height="240"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const gondola = {
+            x: 20,
+            y: 180,
+            width: 32,
+            height: 16,
+            speed: 2
+        };
+
+        const canal = {
+            x: 0,
+            y: 160,
+            width: 320,
+            height: 80
+        };
+
+        const cinema = {
+            x: 320,
+            y: 120,
+            width: 60,
+            height: 40
+        };
+
+        const bricole = [
+            {x: 50, y: 160},
+            {x: 150, y: 160},
+            {x: 250, y: 160}
+        ];
+
+        const veneziaSign = {
+            x: 10,
+            y: 100,
+            width: 80,
+            height: 30
+        };
+
+        let gameEnded = false;
+        let cameraOffset = 0;
+        const fireworks = [];
+
+        const keys = {};
+        document.addEventListener('keydown', (e) => keys[e.key] = true);
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+        let touchStartX, touchStartY;
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touchEndX = e.touches[0].clientX;
+            const touchEndY = e.touches[0].clientY;
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                gondola.x += dx > 0 ? gondola.speed : -gondola.speed;
+            } else {
+                gondola.y += dy > 0 ? gondola.speed : -gondola.speed;
+            }
+            
+            touchStartX = touchEndX;
+            touchStartY = touchEndY;
+        });
+
+        function update() {
+            if (gameEnded) {
+                updateFireworks();
+                return;
+            }
+
+            if (keys['w'] || keys['W']) gondola.y -= gondola.speed;
+            if (keys['s'] || keys['S']) gondola.y += gondola.speed;
+            if (keys['a'] || keys['A']) gondola.x -= gondola.speed;
+            if (keys['d'] || keys['D']) gondola.x += gondola.speed;
+
+            gondola.x = Math.max(canal.x, Math.min(gondola.x, canal.x + canal.width - gondola.width));
+            gondola.y = Math.max(canal.y, Math.min(gondola.y, canal.y + canal.height - gondola.height));
+
+            if (gondola.x > canvas.width / 2) {
+                cameraOffset = gondola.x - canvas.width / 2;
+            }
+
+            if (gondola.x + gondola.width > cinema.x - cameraOffset && gondola.y + gondola.height > cinema.y) {
+                gameEnded = true;
+                createFireworks();
+            }
+        }
+
+        function drawPixel(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function drawGondola(x, y) {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x - cameraOffset, y, gondola.width, gondola.height);
+            
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(x - cameraOffset + gondola.width - 4, y - 8, 2, 8);
+            ctx.fillRect(x - cameraOffset + gondola.width - 6, y - 10, 6, 2);
+            
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - cameraOffset + 4, y + 2, gondola.width - 8, 4);
+            
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x - cameraOffset + 6, y - 6, 4, 6);
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(x - cameraOffset + 6, y - 8, 4, 2);
+        }
+
+        function drawBricola(x, y) {
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - cameraOffset, y, 4, 80);
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(x - cameraOffset + 1, y, 2, 80);
+        }
+
+        function drawArrow() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(10, 30);
+            ctx.lineTo(canvas.width - 10, 30);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(canvas.width - 20, 20);
+            ctx.lineTo(canvas.width - 10, 30);
+            ctx.lineTo(canvas.width - 20, 40);
+            ctx.stroke();
+        }
+
+        function createFireworks() {
+            for (let i = 0; i < 10; i++) {
+                fireworks.push({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height,
+                    size: Math.random() * 2 + 1,
+                    fillColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+                    velocity: {
+                        x: Math.random() * 6 - 3,
+                        y: Math.random() * -3 - 3
+                    }
+                });
+            }
+        }
+
+        function updateFireworks() {
+            for (let i = 0; i < fireworks.length; i++) {
+                const firework = fireworks[i];
+                firework.x += firework.velocity.x;
+                firework.y += firework.velocity.y;
+                firework.velocity.y += 0.05;
+                if (firework.y > canvas.height) {
+                    fireworks.splice(i, 1);
+                    i--;
+                }
+            }
+            if (fireworks.length < 10) createFireworks();
+        }
+
+        function drawFireworks() {
+            fireworks.forEach(firework => {
+                ctx.fillStyle = firework.fillColor;
+                ctx.beginPath();
+                ctx.arc(firework.x, firework.y, firework.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function draw() {
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < canvas.width + cameraOffset; i += 20) {
+                const height = 80 + Math.sin(i * 0.1) * 20;
+                ctx.fillStyle = `rgb(${180 + Math.random() * 20}, ${140 + Math.random() * 20}, ${100 + Math.random() * 20})`;
+                ctx.fillRect(i - cameraOffset, canvas.height - height - canal.height, 20, height);
+                
+                ctx.fillStyle = '#FFFF99';
+                for (let j = 0; j < 3; j++) {
+                    for (let k = 0; k < 2; k++) {
+                        ctx.fillRect(i - cameraOffset + 4 + j * 6, canvas.height - height - canal.height + 10 + k * 20, 2, 4);
+                    }
+                }
+            }
+
+            ctx.fillStyle = '#4682B4';
+            ctx.fillRect(canal.x, canal.y, canal.width, canal.height);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            for (let i = 0; i < canvas.width + cameraOffset; i += 10) {
+                ctx.fillRect(i - cameraOffset, canal.y + Math.sin(Date.now() * 0.01 + i * 0.1) * 2, 5, 1);
+            }
+
+            bricole.forEach(bricola => drawBricola(bricola.x, bricola.y));
+
+            drawArrow();
+
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(veneziaSign.x - cameraOffset, veneziaSign.y, veneziaSign.width, veneziaSign.height);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('VENEZIA', veneziaSign.x - cameraOffset + veneziaSign.width / 2, veneziaSign.y + 20);
+
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(cinema.x - cameraOffset, cinema.y, cinema.width, cinema.height);
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(cinema.x - cameraOffset + 5, cinema.y + 5, 50, 15);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('CINEMA', cinema.x - cameraOffset + 10, cinema.y + 15);
+
+            const bulbOn = Math.floor(Date.now() / 500) % 2 === 0;
+            for (let i = 0; i < 5; i++) {
+                drawPixel(cinema.x - cameraOffset + 10 + i * 10, cinema.y + 25, bulbOn ? '#FFFF00' : '#808080');
+            }
+
+            drawGondola(gondola.x, gondola.y);
+
+            if (gameEnded) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                drawFireworks();
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Tutti alla Mostra del Cinema', canvas.width / 2, canvas.height / 2 - 20);
+                ctx.fillText('dal 28 al 30 Agosto.', canvas.width / 2, canvas.height / 2);
+                ctx.fillText('Auguri!', canvas.width / 2, canvas.height / 2 + 20);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
