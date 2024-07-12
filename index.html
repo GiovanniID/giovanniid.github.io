@@ -4,13 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gondola di Venezia</title>
-    <style>
+    <!-- <style>
         body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #87CEEB; }
         canvas { border: 2px solid #000; image-rendering: pixelated; max-width: 100%; max-height: 100%; }
+    </style> -->
+    <style>
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background-color: #87CEEB; }
+        #gameContainer { position: relative; }
+        canvas { border: 2px solid #000; image-rendering: pixelated; max-width: 100%; max-height: 100%; }
+        #header {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        @keyframes moveRight {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(20px); }
+            100% { transform: translateX(0); }
+        }
+        #finger {
+            display: inline-block;
+            font-size: 36px;
+            animation: moveRight 2s infinite;
+        }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="640" height="480"></canvas>
+    <!-- <canvas id="gameCanvas" width="640" height="480"></canvas> -->
+    <div id="gameContainer">
+        <div id="header">
+            Muovi la gondola verso destra <span id="finger">👆</span>
+        </div>
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+    </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
